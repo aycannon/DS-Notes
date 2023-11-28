@@ -659,15 +659,222 @@ When we observe subject $i$'s outcome, they will either be treated or not: $y_i 
     We can never get individual counterfactuals, but we can find the average counterfactual
 \end{note}
 
+ For example, if $\mathbb{E}[y(1) \mid d=1]=\mathbb{E}[y(1)]$ and $\mathbb{E}[y(0) \mid d=0]=\mathbb{E}[y(0)]$, straightforward to compute the desired ATE as
+\begin{align*}
+    A T E & \equiv \mathbb{E}[y(1)-y(0)] \\
+& =\mathbb{E}[y(1)]-\mathbb{E}[y(0)] \\
+& =\mathbb{E}[y(1) \mid d=1]-\mathbb{E}[y(0) \mid d=0] \\
+& =\underbrace{\mathbb{E}[y \mid d=1]}_{\text {Observed }}-\underbrace{\mathbb{E}[y \mid d=0]}_{\text {Observed }}
+\end{align*}
+
+Our initial assumptions, $\mathbb{E}[y(1) \mid d=1]=\mathbb{E}[y(1)]$ and $\mathbb{E}[y(0) \mid d=0]=\mathbb{E}[y(0)]$ imply random treatment assignment
+
+
 \subsection{Randomised Controlled Trials}
+
+Randomised Controlled Trials (RCTs) are the golden standard for evaluating treatment effects. Very simple premise. If you want to know what the treatment $d$ does to an outcome $y$, test out $d$ on a subset of the sample (say 50\%) a.k.a the treatment group, and compare the outcomes to the rest of the same, the control group.
+
+\hl{Random treatment assignment} means that $d$ is independent of the rotational outcomes $y(1)$ and $y(0)$, which gives us:
+\begin{align*}
+    A T E & \equiv \mathbb{E}[y(1)-y(0)] \\
+& =\mathbb{E}[y(1)]-\mathbb{E}[y(0)] \\
+& =\mathbb{E}[y(1) \mid d=1]-\mathbb{E}[y(0) \mid d=0] \\
+& =\underbrace{\mathbb{E}[y \mid d=1]}_{\text {Observed }}-\underbrace{\mathbb{E}[y \mid d=0]}_{\text {Observed }}
+\end{align*}
+
+\subsubsection{Estimating ATE in RCT}
+
+It is easy to estimate ATE in RCT due to the random treatment assignment.
+
+\begin{procedure}
+    Consider an RCT with random binary treatment assignment and outcomes: $\{d_i,y_i\}_{i=1}^n$ where $\sum_{i=1}^n d_i = n_1$ (number of treated subjects) and $\sum_{i=1}^n (1-d_i) = n-n_1 = n_0$. The total sample is split into two, treated $n_1$ and non-treated $n_0$. Total subjects is $n$.
+
+    Because of our random treatment assignment, we know that the difference in average outcomes between the treatment and control groups is \hl{caused} by the treatment. Therefore, if $\Bar{y}_1\equiv \frac{1}{n_1}\sum_{i=1}^n d_iy_i$ and $\Bar{y}_0 \equiv \frac{1}{n_0}\sum_{i=1}^n(1-d_i)y_i$, then we know that the estimated ATE will be:
+    \begin{equation}
+        \widehat{ATE} = \Bar{y}_1 - \Bar{y}_0
+    \end{equation}
+    and will be a very good estimator for ATE (consistent under the law of large numbers). We can also find the standard errors very easily if the observations are independent:
+
+    \begin{equation*}
+        SE(\widehat{ATE}) = \sqrt{\dfrac{1}{n_0}\widehat{\mathbb{V}ar}(y_i|d_i=0) + \dfrac{1}{n_1}\widehat{\mathbb{V}ar}(y_i|d_i=1)}
+    \end{equation*}
+\end{procedure}
+
+\begin{note}
+    The standard central limit theorem implies asymptotic normality.
+\end{note}
+
+\subsubsection{Near-experimental designs}
+RCTs are often unfeasible and impractical. In these cases, we look for near-experimental variation in observational data to recover treatment effects. We need to include many more assumptions, but we will ignore this. 
+
+You have to find groups of observations that may act as treatment and control groups, even if the treatment assignment is not explicitly random. Examples:
+\begin{itemize}
+    \item Difference-in-Difference analysis
+    \item Regression discontinuity analysis
+    \item Instrumental variable analysis
+\end{itemize}
 
 \subsection{Conditional Ignorability}
 
+Now we will focus on the use of machine learning to facilitate causal analysis in conditional ignorability and LTE cases.
+
+When we don't have experimental data we have to look at observational data. Instead of controlling for treatment, you are stuck observing what happened when treatment varied in an uncontrolled manner. In these sorts of studies (observation studies) \hl{estimation of the counterfactuals depend on the assumption of conditional ignorability}.
+
+\paragraph{Confounding co-influences:} We must control for all confounding co-influences on treatment $d$ and outcome $y$. These confounding co-influences (or confounders) are variables that simultaneously affect $d$ and $y$. There are always lots of confounders in observational studies, meaning we must do high-dimensional controlling which is where machine learning comes in.
+
+\begin{procedure}
+    \hspace{1in}
+    Data is $\{d_i, \mathbf{x}_i, y_i\}_{i=1}^n$ where potential outcomes means $y_i = y(d_i)$. If we had an RCT, random treatment assignment \textit{implies} that $d_i$ is independent of the potential outcomes $y(d_i)$ i.e.
+    \begin{equation*}
+        \{y_i(1), y_i(0)\} \ind d_i
+    \end{equation*}
+
+    However, if data is observational, $d_i$ is not independent of potential outcomes $y(d_i)$.
+    \begin{example}
+        University attendance, $d$, is affected by academic ability $x$, but so are potential outcomes $y(d_i)$. In this example, our independence condition does not hold.
+    \end{example}
+
+    If we control (= hold fixed) confounders, we have \hl{conditional independence and therefore conditional ignorability}:
+    \begin{equation*}
+        \{y_i(1), y_i(0)\} \ind d_i |\mathbf{x}_i
+    \end{equation*}
+
+    You can see that conditional ignorability hinges on $\mathbf{x}_i$. In our example, $\mathbf{x}_i$ must include academic ability or at least a good proxy for it.
+\end{procedure}
+
 \subsection{Linear Treatment Effect Model}
+
+The linear treatment effects (LTE) model is:
+
+\begin{align*}
+    y &= \gamma d + \mathbf{x^\prime}\beta + \epsilon, \quad \E[\epsilon|d,\mathbf{x}] = 0 \\
+    d &= \mathbf{x^\prime}\tau + \upsilon, \quad \E[\upsilon|\mathbf{x}] = 0
+\end{align*}
+
+The first equation looks like normal regression for prediction. \textbf{But} our specification of the conditional error is new. $\E[\epsilon|d,\mathbf{x}] = 0$, allows interpretation of $\gamma$ as a causal effect of $d$ on $y$. 
+
+the second equation is saying that $\mathbf{x}$ contains \textbf{all} variables affecting $d$ and $y$.
+
+\begin{note}
+    The LTE model is a structural model meaning it specifies the relation between unobserved $\epsilon$ and observed $d,\mathbf{x}$; unlike a reduced form model which only specifies the relationship between observable variables.
+
+    This distinction is core to the distinction between prediction and causal inference.
+\end{note}
+
+\begin{procedure}
+    \hspace{1in}
+    Suppose conditional ignorability (on $\mathbf{x}$) ignorability holds, i.e. $\E[\epsilon|d,\mathbf{x}] = 0$. We partition $\mathbf{x} = \{\mathbf{z,w}\}$ and assume $\E[\epsilon|d,\mathbf{w}]\neq 0$. We observe $\mathbf{z}$, but not $\mathbf{w}$.
+
+    Suppose you want to predict $y$ form $(d,\mathbf{z})$. We use the conditional (on $d,\mathbf{z}$) mean function of $y$: $\E(y|d,\mathbf{z})$.
+
+    We can estimate $\E(y|d,\mathbf{z})$ by OLS on:
+
+    \begin{equation}
+        \label{LTE OLS}
+        y = \alpha d + \eta \mathbf{w} + u
+    \end{equation}
+
+    where $u \equiv y - \alpha d - \eta \mathbf{w}$.
+\end{procedure}
+
+As long as the average relationship between $y, d, \mathbf{z}$ i.e. $\E(y|d,\mathbf{z})$ is stable, the prediction model works well.
+
+\begin{note}
+    \textbf{But} $\hat{\alpha}$ is a poor estimate of the average treatment effect = $\gamma$.
+\end{note}
+
+\begin{shaded}
+    \begin{itemize}
+        \item \textbf{Prediction}: we are not concerned with $\E[\epsilon|d, \mathbf{w}]=0$ so we use the reduced form models
+        \item \textbf{Causal Inference}: We need $\E[\epsilon|d,\mathbf{x}]=0$ as it guards against OVB, so we use structural models. 
+    \end{itemize}
+\end{shaded}
+
+\subsubsection{Fitting an LTE model}
+
+\begin{procedure}
+    Recall we have the LTE model:
+
+    \begin{align*}
+    y &= \gamma d + \mathbf{x^\prime}\beta + \epsilon, \quad \E[\epsilon|d,\mathbf{x}] = 0 \\
+    d &= \mathbf{x^\prime}\tau + \upsilon, \quad \E[\upsilon|\mathbf{x}] = 0
+\end{align*}
+
+Suppose you have data $(d_i, \mathbf{x}_i, y_i)_{i=1}^n$ where $\mathbf{x}$ is a p-vector. \hl{If $n\gg p$, we don't need to worry about the second equation. We can just estimate the first by OLS and $\hat{\gamma}$ is a good estimator of $\gamma$}
+
+\begin{note}
+    To justify $\E[\epsilon|d,\mathbf{x}]=0$ we need $p$ to be large. If $p>n$ you can't estimate the first equation by OLS and need to select regressors. We can do this by using a \textbf{lasso.}
+\end{note}
+\end{procedure}
 
 \subsection{LTE Lasso}
 
+When we have many confounders, especially when $p>n$, you need to model treatment assignment in the LTE model (include the second equation). We consider the lasso and cross-validation method.
 
+\begin{shaded}
+Difference between lasso for prediction and LTE:
+\begin{itemize}
+    \item \textbf{Prediction lasso}: Get a path of the candidate model by varying the penalty, and we pick the weight which gives rise to the model with the best cross-validated out-of-sample predictive performance.
+    \begin{itemize}
+        \item This works well to get a model that predicts new data from the \hl{same joint distribution} of $(\mathbf{x}, y)$ as the old data.
+        \item In our treatment effects, the joint distribution changes when $d$ changes so it does not work well. The effect of $d$ on $y$ when $d$ moves independently of $x$, i.e. a \hl{new joint distribution $(d, \mathbf{x}, y)$ when $d$ changes}.
+    \end{itemize}
+    \item \textbf{LTE lasso}: removes the effect of the confounders that are correlated with $d$ from treatment effect and estimates $\hat{\gamma}$. It can handle large sets of confounders i.e. when $p$ is large.
+\end{itemize}
+\end{shaded}
+
+\begin{procedure}
+    We have the LTE model:
+
+    \begin{align*}
+    y &= \gamma d + \mathbf{x^\prime}\beta + \epsilon, \quad \E[\epsilon|d,\mathbf{x}] = 0 \\
+    d &= \mathbf{x^\prime}\tau + \upsilon, \quad \E[\upsilon|\mathbf{x}] = 0
+    \end{align*}
+
+    \begin{enumerate}
+        \item We first model the treatment assignment $\E[d|\mathbf{x}]$
+        \item We then use the fitted values $\hat{d} = \mathbf{x^\prime}\hat{\tau}$ as additional controls in the response equation (first one).
+    \end{enumerate}
+\end{procedure}
+
+The fitted values $\hat{d}$ in the 2nd stage control for the effect of $\mathbf{x}$ on treatment assignment and isolates random variation in $d$ coming from $\upsilon$
+\begin{note}
+    The random variation in $d$ coming from $\upsilon$ can be thought of as little experiments in $d$, \hl{so we can use the fitted values $\hat{d}$ to create a near-experimental design}.
+\end{note}
+
+Everything hinges on having fitted values $\hat{d}$ that captures the relevant influences on $\mathbf{x}$ on $d$, but the lasso can be good for this.
+
+\begin{algo}
+\hspace{1in}
+    \begin{enumerate}
+        \item Cross-validate a lasso to estimate $\E[d|\mathbf{x}] = \mathbf{x^\prime}\tau$ and collect the fitted values $\hat{d} = \mathbf{x^\prime}\hat{\tau}$
+        \item Cross validate a lasso to estimate:
+        \begin{equation}
+            \label{2nd step LTE lasso}
+            \E[y|\mathbf{x}, d] = \vartheta \hat{d} + \gamma d + \mathbf{x^\prime}\beta
+        \end{equation}
+        with no penalty on $\hat{d}$, because we need to keep control to maintain the conditional ignorability and if we were to penalise $\hat{d}$ the coefficient would go to 0 and we would lose it.
+        \item Then, our $\hat{\gamma}$ is our estimate of the treatment effect of $d$ on $y$.
+    \end{enumerate}
+\end{algo}
+
+\subsubsection{Why does the LTE lasso work?}
+
+When we combine the two LTE model equations:
+
+\begin{equation*}
+    \E[y|\mathbf{x},d] = \gamma d + \mathbf{x^\prime}\beta = \gamma\upsilon + \mathbf{x^\prime}(\gamma\tau + \beta) = \gamma\upsilon + \mathbf{x^\prime}\tilde{\beta}
+\end{equation*}
+
+Controlling for our fitted values $\hat{d}$ unpenalised in the second step means that we can estimate the effect of the residuals $\hat{\upsilon}$ which is independent of cofounder influence in $\hat{d}$.
+
+\begin{note}
+    The special thing about LTE lasso is that it handles large $p$ and automatically picks out the relevant predictors of treatment assignment.
+\end{note}
+
+\begin{note}
+    the LTE lasso gives point estimates of the treatment effect but \hl{does not have good inferential properties i.e. standard errors}
+\end{note}
 
 \appendix
 
