@@ -27,15 +27,434 @@
 
 We want to predict the response $y$ from inputs $\mathbf{x} = (1, x_1, x_2, x_3, \ldots, x_p)$. We can do this by modelling the \hl{conditional mean of $y$ conditional on $\mathbf{x}$}
 
+\begin{equation*}
+    \E(y|\mathbf{x}) = f(\mathbf{x^\prime\beta}) = (\beta_0 + \beta_1 x_1 + \beta_2 + x_2 + \ldots + \beta_p x_p)
+\end{equation*}
+$f$ is a link function - linking the explanatory variable matrix and the coefficient vector. $\epsilon \equiv y - \E(y|\mathbf{x})$ is the error term. We can rewrite the model as a combination of the conditional mean and the error:
+
+\begin{equation}
+    y = \E(y|\mathbf{x}) + \epsilon
+\end{equation}
+
+\begin{note}
+    $\E(\epsilon|\mathbf{x}) = 0$
+\end{note}
+
+\begin{note}
+    \hl{Unconditional means are just a number. Conditional means are a function that depends on $\mathbf{x}$}.
+\end{note}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{pic/conditional mean.png}
+    \caption{Difference between conditional and unconditional means}
+    \label{fig:conditional means}
+\end{figure}
+
+\subsection{Linear Regression}
+
+Linear regressions have the link function $f(z) = z$. This gives us:
+
+\begin{equation*}
+    \E(y|\mathbf{x}) = f(\mathbf{x^\prime\beta}) = (\beta_0 + \beta_1 x_1 + \beta_2 x_2 +\ldots + \beta_p x_p)
+\end{equation*}
+
+Let $\epsilon \equiv y - \mathbf{x^\prime\beta}$ is the error term and $\E[\epsilon|\mathbf{x}] = 0$, this gives us:
+
+\begin{equation}
+    \label{eq:lin reg}
+    y = \mathbf{x^\prime\beta} + \epsilon   
+\end{equation}
+
+We often assume that the errors are normally distributed, i.e. $\epsilon \sim \mathcal{N}(0,\sigma^2)$, giving:
+
+\begin{equation}
+\label{gaussian linear reg}
+    y \sim \mathcal{N}(\mathbf{x^\prime\beta}, \sigma^2) = \dfrac{1}{\sqrt{2\pi\sigma^2}}\exp\left[-\dfrac{(y - \mathbf{x^\prime\beta})^2}{2\sigma^2}\right]
+\end{equation}
+
+\subsection{Log Linearity}
+
+We may want to model the conditional mean of $\ln y$ rather than $y$ depending on the relationship between the outcome and regressors. This means that the relationship between the variables is multiplicative rather than additive.
+
+\begin{equation*}
+    \ln y = \alpha + \beta x + \epsilon \Leftrightarrow y = e^\alpha e^{\beta x}e^\epsilon
+\end{equation*}
+
+How does a unit change in $x$ affect $y$:$\beta \approx \Delta y /y$, meaning $\beta$ measures the percentage change in $y$ following a unit change in $x$
+
+\begin{note}
+    We use $\ln y$ whenever $y$ changes on a \hl{percentage scale or is strictly positive}. 
+\end{note}
+
+\subsection{Log-Log}
+If we want to model the elasticity of variables we use log-log-models. That means we log the RHS as well. i.e.
+
+\begin{equation*}
+    \ln y = \beta_0 + \beta_1 \ln x + \epsilon
+\end{equation*}
+
+This means that $\beta_1$ can be interpreted as 
+\begin{equation*}
+    \beta_1 \approx \dfrac{\Delta y / y}{\Delta x/ x}
+\end{equation*}
+
+This means that we interpret this as a 1\% change in $x$ leads to a $\beta_1 \%$ change in $y$.
+
+\subsection{Dummy Variables}
+
+We will look at the example of orange juice sales. Specifically using brand dummy variables:
+
+\begin{equation*}
+\text{brandtropicana} = \begin{cases}
+        1 & \text{if the obs was tropicana} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation*}
+
+We will also have a similar indicator variable for the other brand Minute Maid. The reason we do not have an indicator variable for every brand is to avoid perfect multicollinearity. \hl{The brand which we do not have an indicator variable for will be the reference variable.}
+
+By introducing dummy variables, we will have different intercepts for the different brands. Let $x = price$
+
+$$
+\E[\ln y| \cdot] = \beta_0 + \beta_1 \ln x + \beta_2 tropicana + \beta_2 minutemaid
+$$
+
+intercept for Tropicana is now $\beta_0 + \beta_2$. We can write this model short-hand by using subscripts:
+
+\begin{equation*}
+    \E[\ln y|\cdot] = \beta_{0,b} + \beta_1 \ln x
+\end{equation*}
+where $b$ indicates the different brands
+
+\subsection{Interactions}
+
+When we want to model how one variable affects how another variable may affect our outcome $y$, we use interaction terms. This is just the product of two regressors.
+
+\begin{equation}
+    \label{eq:interaction}
+    \E[y|\mathbf{x}] = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2
+\end{equation}
+
+This means that the effect on $y$ from a unit change in $x_1$ is $\beta_1 + \beta_3 x_2$. 
+
+\begin{note}
+    Interactions can very quickly increase the number of regressors in our model
+\end{note}
+
+Back to our oj data, if we were to add interaction terms between brands and prices we would have the model:
+
+\begin{equation*}
+    \E[y|\cdot] = \beta_{0,b} + \beta_{1,b} \ln x
+\end{equation*}
+
+Notice, we have brand-specific intercepts and elasticities ($\beta$ coefficient is interpreted as elasticity because of the log-log model).
+
+\subsection{Generalised Linear Model (GLM)}
+
+So far, we have thought about regressions as minimising the sum of squared residuals (OLS), but we actually tend to use a more general approach of \textit{maximum likelihood}. 
+
+The likelihood is the probability of the data given the coefficients. he maximum likelihood, found with the coefficients that give the largest likelihood.
+
+In our Gaussian regression, the probability of a data point $i$ is:
+\begin{equation*}
+    y \sim \mathcal{N}(\mathbf{x^\prime\beta}, \sigma^2) = \dfrac{1}{\sqrt{2\pi\sigma^2}}\exp\left[-\dfrac{(y - \mathbf{x^\prime\beta})^2}{2\sigma^2}\right]
+\end{equation*}
+
+That means, because the data is i.i.d, the probability of observing the whole data set $(y,\mathbf{x})_{i=1}^n$ is
+
+\begin{equation}
+\label{eq:likelihood normal}
+\mathcal{L(\mathbf{\beta}}) \equiv \prod_{i=1}^n \dfrac{1}{\sqrt{2\pi\sigma^2}}\exp\left[-\dfrac{(y - \mathbf{x^\prime\beta})^2}{2\sigma^2}\right]
+\end{equation}
+
+where $\mathcal{L(\beta)}$ is the likelihood. The maximum likelihood estimates $\beta$ such that $\mathcal{L(\beta)}$ is maximised.
+
+\subsubsection{Deviance}
+
+Deviance compares the likelihood of values $L$ of two model formulations. very similar to the Residual Sum of Squares.
+\begin{enumerate}
+    \item Saturated (a.k.a Satiated) model: Enough parameters to perfectly fit the data, $L_s$
+    \item Fitted Model: The model we specify, in between the null model (no parameters) and the saturated model.
+\end{enumerate}
+
+Deviance $D$ measures the distance between the data and the fitted model by likelihoods:
+
+\begin{equation}
+    \label{eq: dev}
+    D(\bm{\beta}) \equiv - 2[\ln L(\bm{\beta}) - \ln L_s]
+\end{equation}
+
+\begin{note}
+    Deviance is complementary to likelihood: \hl{minimise deviance $\Leftrightarrow$ maximise likelihood}
+\end{note}
+
+\begin{note}
+    We talk in terms of deviance because it applies to nonlinear models as well as linear ones. It makes the comparison between different model specifications easier to interpret.
+\end{note}
+
+\subsubsection{Log-Likelihood}
+
+The saturated model has the perfect fit, meaning the log-likelihood is equal to:
+
+\begin{equation*}
+    \ln L(\bm{\beta}) = -\dfrac{n}{2}\ln(2\pi\sigma^2)
+\end{equation*}
+
+The log-likelihood of the fitted model is:
+\begin{equation}
+    \label{eq: log likelihood fitted}
+    \ln L(\bm{\beta}) = -\dfrac{n}{2}\ln(2\pi\sigma^2) - \dfrac{1}{2\sigma^2}\sum_{i=1}^n(y - \mathbf{x_i^\prime}\bm{\beta})^2
+\end{equation}
+
+Together we can find the deviance:
+
+\begin{equation}
+    D(\bm{\beta}) = \dfrac{1}{\sigma^2}\underbrace{\sum_{i=1}^n (y_i - \mathbf{x_i^\prime}\bm{\beta})^2}_{\text{Sum of squared errors}}
+\end{equation}
+
+When we write it this way we can see that the deviance is proportional to the sum of squared errors, meaning that the \hl{deviance minimising estimate for $\beta$ is also the least squares estimate and also the maximum likelihood estimate.}
+
+\paragraph{In R}: we have regression \lstinline{summary} statistics that are important here.
+\begin{enumerate}
+    \item \hl{Residual Deviance}, $D$, is what we are minimising:
+    \begin{equation*}
+        D = \sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2
+    \end{equation*}
+    Also known as the \textbf{residual sum of squares}
+    \item \hl{Null Deviance}, $D_0$, the deviance for a model with only a constant. In the linear regression case:
+    \begin{equation*}
+        D_0 = \sum_{i=1}^n (y_i - \Bar{y})^2
+    \end{equation*}
+    Also known as the \textbf{total sum of squares}
+\end{enumerate}
+
+We know that the difference between the two is from the information about $y$ coming from $\mathbf{x}$. This is familiar, this is the proportion of information (variance) accounted for by the model, $R^2$:
+
+\begin{equation}
+    \label{eq:r2}
+    R^2 \equiv \dfrac{D_0 - D}{D_0} = 1 - \dfrac{D}{D_0}
+\end{equation}
+
+When we define $R^2$ in terms of deviance it is more general compared to when we learnt about it in terms of the sum of squares.
+
+We also have the \hl{dispersion parameter}: $\sigma^2$. Since $y \sim \mathcal{N}(\mathbf{x^\prime}\bm{\beta}, \sigma^2)$, the error variance $\sigma^2$ measures variability around the mean $\mathbf{x^\prime}\bm{\beta}$:
+
+\begin{equation*}
+    \sigma^2 = Var(\epsilon) = Var(y - \mathbf{x^\prime}\bm{\beta})
+\end{equation*}
+
+\begin{note}
+    Other info: \hl{Degrees of freedom} = observations - coefficients estimated; \hl{AIC} - Akaike's Information Criteria.
+\end{note}
+
+\subsection{Prediction}
+\begin{note}
+    Big difference between in-sample (IS) and out-of-sample (OOS) predictions. IS: how well does the estimated model fit \textit{the} data? OOS: How well does the model fit \textit{new} data?
+\end{note}
+
+A massive aspect of this course is about the \hl{avoidance of overfitting}. Predictive ability is measured OOS to avoid overfitting.
+
+
+\newpage
 \section{Cross Validation}
 
-\section{Regularisation}
+Cross-validation is a way to estimate OOS deviance OOS fit measures. We use it for model selection: among a set of models, we want to choose the one with the best OOS predictions. Model selection often involves dimension reduction.
 
-\subsection{PCR}
+\subsection{In-Sample fit}
+
+We use in-sample $R^2$ to summarise a fitted model's ability to predict outcomes in training data.
+
+\begin{equation*}
+    R^2_{IS} = \dfrac{D_{IS,0} - D_{IS}}{D_{IS,0}} = 1 - \dfrac{D_{IS}}{D_{IS,0}}
+\end{equation*}
+where $D_{IS,0}$ is the deviance of the null model in-sample.
+
+\begin{note}
+    This is useful, but we want to know the predictive power of the model, so we need the out-of-sample $R^2$.
+\end{note}
+
+\subsection{Split-Sample Validation}
+
+Because we need the OOS deviance for our model, we need to split the data into training (IS) and testing (OOS) data. For split-sample validation, we will randomly split our sample of $n$ observations into $n_1$ training observations and $n_2 = n-n_1$ test observations
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{pic/split sample.png}
+    \caption{Splitting the sample}
+    \label{fig:split sample}
+\end{figure}
+
+Either side of the data in Figure \ref{fig:split sample} can be the training/test data, but the point is that we train on a subset of the data and test it on the other.
+
+\begin{procedure}
+    Given our subsets of data, training: $(y_i, \mathbf{x_i})_{i=1}^{n_1}$, test:$(y_i, \mathbf{x_i})_{i=1}^{n_2}$ where $n_1 + n_2 = n$. 
+    
+    \begin{enumerate}
+        \item We will fit the model on the $n_1$ observations in the training data to get fitted coefficients. 
+        \item We then take those fitted coefficients to predict outcomes on the $n_2$ test observations.
+        \item From this we will calculate the OOS deviance/$R^2$
+    \end{enumerate}
+    \begin{equation*}
+        D_{OOS} = \sum_{j=1}^{n_2}(y_j - \mathbf{x^\prime_j}\bm{\hat{\beta}})^2, \qquad D_{OOS,0} = \sum_{j=1}^{n_2}(y_j - \Bar{y})^2
+    \end{equation*}
+
+    \begin{equation*}
+        R^2_{OOS} = 1 - \dfrac{D_{OOS}}{D_{OOS,0}}
+    \end{equation*}
+\end{procedure}
+
+We can compute the different OOS $R^2$ for many models and pick the model with the highest $R^2_{OOS}$.
+\begin{note}
+    It is possible to find a negative $R^2_{OOS}$. This implies that our model is worse than the null model. Meaning, our model is overfitting the data. \hl{Overfitting: fitted model reflects noise particular to the training data, but not present in the test data.}
+\end{note}
+
+\subsection{Detecting and Avoiding Issues of Overfitting}
+
+\begin{procedure}
+    \hspace{1in}
+    \subsubsection*{Validate on New data}
+    By evaluating the OOS predictive ability of a model, we can detect whether it is overfitting. \hl{Can be done through split-sample or $k$-fold cross validation}
+    \subsubsection*{Dimension Reduction}
+    Overfitting is much more likely in high-dimensional models (many regressors relative to sample size). \hl{We can do this through the exclusion of irrelevant regressors or regularisation}.
+\end{procedure}
+
+\subsection{K-fold Cross-Validation}
+
+Split-sample validation is not very efficient because we only have two subsets of the data. This means \textbf{maximum}, we can test the model's predictive power on two sets.
+
+$K$-fold CV is a refinement of the split-sample:
+
+\begin{procedure}
+    \begin{enumerate}
+        \item Split the $n$ observations into $K$ evenly sized subsets (folds). For $k = 1,2,\ldots, K$:
+        \item Fit the model on all the data but exclude fold $k$.
+        \item Record the OOS $R^2$ by testing on the excluded $k$th fold.
+    \end{enumerate}
+\end{procedure}
+
+The result will be $K$ OOS/IS $R^2$. We can use the distribution of these OOS $R^2$ \textit{or just the mean}, to evaluate the model's predictive power. The split can be visualised as:
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = \textwidth]{pic/kfold.png}
+    \caption{Visualisation of splitting the data}
+    \label{fig:kfold split}
+\end{figure}
+
+The $k$-fold estimator of $R^2$ is more accurate as it uses the data more efficiently.
+
+\subsection{Dimension Reduction}
+
+It is very common to have high-dimensional models (many regressors). In this case, we may have 1000's of regressors which is way too many for interpretation. The easiest way to do this, \hl{the cut model}. Here we choose variables with the lowest $p$-values. The choice of the number of variables is completely subjective.
+
+\begin{note}
+    When $p>n$ (number of regressors is larger than the number of observations) there is no longer a unique least squares coefficient estimate, but rather an infinite number of solutions. Each of these solutions will have 0 error on the training data, but typically very poor test performance. 
+\end{note}
+
+A few things we can do:
+\begin{itemize}
+    \item Subset selection (dimension reduction): identifying a subset of the $p$ predictors.
+    \item Shrinkage (regularisation): fit a model with all $p$ predictors, irrelevant regressors' coefficients will shrink to 0. This shrinkage reduces the variance. Shrinkage can simultaneously perform variable selection (lasso).
+    \item Dimension reduction: crude (as mentioned above), or PCA where we project the $p$ predictors into an $M$-dimensional space, where $M<p$.
+\end{itemize}
+
+
+\subsubsection{PCR}
 We talk about PCA in more detail in Section \ref{sec:PCA}
 
 PCR offers a prediction technique and reduces the risk of overfitting through dimension reduction. We have found the principal components through PCA, we could use those components for regression. 
 
+\newpage
+\section{Regularisation}
+
+Regularization generates a manageable set of models to choose form. We penalise complexity (number of regressors) and create a list of promising candidate models. The resulting list is called a \hl{regularisation path}.
+
+In this crude dimension reduction we mentioned earlier, we could use a decreasing threshold $p$-value to obtain a regularisation path of fitted models ranging from complex to simple. \hl{However, this \textit{multiple testing} regularisation approach is bad as we will likely discard useful information on the response variable}. This is because multicollinearity inflates $p$-values. Additionally, because our foundation is the full model, the $p$-values are obtained from an overfitted model with terrible a OOS fit. Finally if $p>n$, we cannot even fit the full model as mentioned, so we have no starting point.
+
+\subsection{Stepwise Regression}
+
+There is both forward and backwards stepwise regression. Backwards stepwise: starting with the full model and cut down (issues are the same as above). \hl{Forward stepwise: starting from the null}.
+
+\begin{algo}
+    \hspace{1in}
+    Let $\mathcal{M}_0$ denote the \textit{null model} (0 predictors)
+
+    For $k = 0, 1, 2, \ldots, p-1$:
+
+    \begin{enumerate}
+        \item Consider all $p-k$ models that augment the predictors in $\mathcal{M}_k$ with \textbf{one additional predictor} (add each regressor one at a time)
+        \item Let the \textit{best} among the $p-k$ models be called $\mathcal{M}_{k+1}$. 
+        \begin{note}
+            Best is defined as having the smallest RSS or highest $R^2$
+        \end{note}
+        \item We now have a regularisation path $\mathcal{M}_0, \ldots, \mathcal{M}_p$. Select the best model along the regularisation path, using the OOS $R^2$.
+    \end{enumerate}
+
+    We can stop the algorithm based on whatever we want. It is common to stop either when reaching a predetermined number of regressors, or when information criteria says that additional complexity does not improve IS fit.
+\end{algo}
+
+\begin{note}
+    We can select the final model through a few methods, not only the OOS $R^2$. Prediction error on a validation set, AIC, BIC, adjusted $R^2$, or \hl{cross validation method}
+\end{note}
+
+\begin{shaded}
+    \textbf{Problems with forward step regression regularisation}:
+
+    \begin{itemize}
+        \item This algorithm is a \hl{greedy} algorithm. It is \textit{myopic}, each iteration it makes the loacl best choice, which may not be the globally best
+        \item The process is very \hl{slow} (computationally intensive). Each step involves fitting increasingly complex mdoels.
+        \item The regularisation path is \hl{unstable}. OOS predictions may change dramatically by including a new regressor. Also small changes to the data may lead to radically different regularisation paths, making model selection unreliable and hard to replicate. 
+    \end{itemize}
+\end{shaded}
+
+Penalised regressions offer a way to get stable regularisation paths.
+
+\subsection{Penalised Regressions}
+
+The instability comes from the number of large coefficients in our models. Because $\hat{y} = \mathbf{x^\prime}\bm{\hat{\beta}}$, and we have large $\bm{\hat{\beta}}$ values, when we apply the model to new data $\hat{y}$ will jump around.
+
+\begin{itemize}
+    \item We want $\hat{\beta}$ to be \hl{less variable, give better predictions and contain exact zeros}.
+\end{itemize}
+
+The point of penalised regressions is to shrink the coefficients estimates (even to zero). This leads to bias, however we will have less volatile predictions.
+
+\subsubsection{Bias-Variance trade-off}
+
+The expected \textit{test MSE} for a given value $x_0$, can ALWAYS be decomposed into the sum of three fundamental quantities: the \hl{variance} of $\hat{f}(x_0)$, the \hl{squared bias} of $\hat{f}(x_0)$ and the \hl{variance of the error term $\epsilon$}. That is:
+
+\begin{equation}
+\label{expected test mse}
+    \E[y_0 - \hat{f}(x_0)]^2 = var(\hat{f}(x_0)) + [\text{bias}(\hat{f}(x_0))]^2 + var(\epsilon)
+\end{equation}
+
+here the notation: $ \E[y_0 - \hat{f}(x_0)]^2$ defines the \textit{expected test MSE at $x_0$}, and refers to the average test MSE that would be obtained if we repeatedly estimated $f$ using a large number of training sets, and tested each at $x_0$.
+
+\hl{The overall expected test MSE can be computed by averaging the expected test MSE over all possible values of $x_0$ in the test set.}
+
+\begin{mdframed}
+    \textit{Variance} refers to the amount by which our predicted response would change if we estimated it using a different training data set. Because the model is fit on the training data, by using different training data we will yield different predictions.\hl{Ideally we would not want the estimate for $f$ to vary much between training sets}.
+
+    \textit{Bias} refers to the error that is introduced by approximating a real-life (complex) problem, by a much simpler model. For example, linear regressions assume a linear relationship between $Y$ and $\mathbf{x}$, however in real life the relationship may be highly non-linear. Therefore, by performing a linear regression will result in some bias in our predictions.
+\end{mdframed}
+
+Equation \eqref{expected test mse} tells us that to minimise the expected test error we select methods that simultaneously have \textbf{low variance} and \textbf{low bias}.
+
+\begin{note}
+    Expected test MSE can never lie below $var(\epsilon)$.
+\end{note}
+
+Generally, more flexible methods increase variance and decrease bias. \hl{The relative rate of change of these two quantities determines whether the test MSE increases or decreases as we increase flexibility}.
+\begin{itemize}
+    \item Initially, an increase in flexibility leads to a quicker decrease in bias than the increase in variance. \hl{Meaning expected test MSE declines}.
+    \item At some point increasing flexibility has littl eimpact on bias, but starts to significantly increase variance and therefore \hl{increases expected test MSE}.
+\end{itemize}
+
+
+
+
+\newpage
 \section{Classification}
 
 \newpage
