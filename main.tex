@@ -447,21 +447,326 @@ Equation \eqref{expected test mse} tells us that to minimise the expected test e
 
 Generally, more flexible methods increase variance and decrease bias. \hl{The relative rate of change of these two quantities determines whether the test MSE increases or decreases as we increase flexibility}.
 \begin{itemize}
-    \item Initially, an increase in flexibility leads to a quicker decrease in bias than the increase in variance. \hl{Meaning expected test MSE declines}.
-    \item At some point increasing flexibility has littl eimpact on bias, but starts to significantly increase variance and therefore \hl{increases expected test MSE}.
+    \item Initially, an increase in flexibility leads to a quicker decrease in bias than an increase in variance. \hl{Meaning expected test MSE declines}.
+    \item At some point increasing flexibility has little impact on bias but starts to significantly increase variance and therefore \hl{increases expected test MSE}.
 \end{itemize}
 
+\subsection{Ridge and Lasso}
+
+Recall, in the linear least squares model our $\beta$ estimates are such that they minimise the deviance:
+
+\begin{equation*}
+    \hat{\beta}_{LS} = \arg \underset{\beta}{\min} \left\{\sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2\right\}
+\end{equation*}
+
+Our least squares estimates can be unstable, prone to overfitting and cannot achieve exact zero estimates. Our \hl{penalised least squares} minimised deviance $+$ a penalty:
+
+\begin{equation}
+    \label{eq:pls}
+    \hat{\beta}_{PLS} = \arg\underset{\beta}{\min}\left\{\sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2 + \lambda\sum_{k=1}^p c(\beta_k)\right\}
+\end{equation}
+
+where $\lambda >0$ is a penalty weight and $c(\beta_k)$ is cost function dependent on the estimated coefficients.
+
+\subsubsection{Penalty Function}
+
+The difference between ridge and lasso is the penalty function. To induce shrinkage, the smallest penalty must be when $\beta_k = 0$ and increasing in $|\beta_k|$.
+
+\begin{itemize}
+    \item \hl{Lasso}: $\hat{\beta}_{Lasso} = \arg\underset{\beta}{\min}\left\{\sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2 + \lambda\sum_{k=1}^p |\beta_k|\right\}$
+    \item \hl{Ridge}: $\hat{\beta}_{Ridge} = \arg\underset{\beta}{\min}\left\{\sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2 + \lambda\sum_{k=1}^p (\beta_k)^2\right\}$
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.75\textwidth]{pic/penalty weights.png}
+    \caption{Lasso vs Ridge Penalty}
+    \label{fig:penalty weights}
+\end{figure}
+
+\paragraph{Alternative Interpretation.} We can look at the penalised regressions as constrained optimization problems:
+
+\begin{align*}
+    \text{Lasso: } \underset{\beta}{\min}\left\{\sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2\right\} &\quad  \text{ s.t } \quad \sum_{k=1}^p |\beta_k| \leq S \\
+    \text{Ridge: } \underset{\beta}{\min}\left\{\sum_{i=1}^n(y_i - \mathbf{x_i^\prime}\bm{\beta})^2\right\} &\quad  \text{ s.t } \quad \sum_{k=1}^p (\beta_k)^2 \leq S 
+\end{align*}
+
+For every $\lambda$ there is an $S$ such that, the estimated coefficients in the penalised regression and constrained optimisation are equal. $S$ can be thought of as a "coefficient budget"
+
+\begin{mdframed}
+    \textbf{\hl{Lasso is the best}}: it has the least bias on important regressors while retaining the stability of the ridge's convex penalty. It also induces automatic lasso selection as it sets irrelevant coefficients to \hl{exactly zero unlike ridge}.
+\end{mdframed}
+
+Because we are penalising the size of the regressors, we must scale them. We usually scale all regressors by their standard deviations and centre them on 0.
+
+\begin{note}
+    \hl{We need to keep all dummy variables in our penalised regressions}. If we were to have a reference variable, our regularisation path and eventual predictions would depend on which category was left out. When we keep the dummies we do not run into perfect multicollinearity.
+\end{note}
+
+\subsubsection{Creating the Regularisation Path}
+
+By varying the penalty weight $\lambda$, we can see a path of candidate models. When $\lambda = 0$, we just have a conventional least squares model. As $\lambda \rightarrow \infty$ the penalised regression gives the null model. \hl{$\lambda$ is a hyperparameter}: external to the core prediction model, but controls the learning process.
+
+We tend to pick the penalised regression model that minimises the OOS MSE. This model may be slightly overfit/too complex, so we also look at a conservative model, with fewer regressors, but higher MSE. This conservative model MSE is 1 standard error on the simple side.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{pic/lasso mse.png}
+    \caption{OOS MSE along the regularisation path}
+    \label{fig:lasso mse}
+\end{figure}
 
 
 
 \newpage
 \section{Classification}
 
+Most of the models we have made so far have been on continuous response variables. Many prediction problems are classification problems. We can fit the usual regression framework, but now our response variable is categorical.
+
+\subsection{K-Nearest Neighbour Classification}
+
+The $K$-NN algorithm predicts the class $\hat{y}$ from new data $\mathbf{x}$ by asking: \hl{what is the most common class for observations around $\mathbf{x}$}.
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pic/image.png}
+  \caption{3 Nearest Neighbour}
+  \label{fig:3nn}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pic/5nn.png}
+  \caption{5 Nearest Neighbout}
+  \label{fig:5nn}
+\end{subfigure}
+\caption{2 Examples of Nearest Neighbour Classification}
+\label{fig:KNN}
+\end{figure}
+
+
+The new data point is assigned to the modal class of the K nearest data points. In Figure \ref{fig:KNN} (a) the new data point would be assigned to red, but in (b) the new data point would be classified as yellow.
+
+\begin{algo}
+    We have data $\{(\mathbf{x_i}, y_i)\}_{i=1}^n$ of labelled observations and input vector $\mathbf{x}_f$ of length $p$, where you would like to predict the class label.
+
+    \begin{enumerate}
+        \item Choose a $K$ value, for example $K=5$
+        \item Find the $K$ (5) nearest neighbours in $\{(\mathbf{x_i}, y_i)\}_{i=1}^n$ using Euclidean distance:
+
+        \begin{equation*}
+            d(\mathbf{x_i, x_f}) = \sqrt{\sum_{j=1}^p (x_{ij}- x_{fj})^2}
+        \end{equation*}
+        \item Let $\left\{(\mathbf{x}_i^1, y_i^1), (\mathbf{x}_i^2, y_i^2), \ldots, \mathbf{x}_i^K, y_i^K)\right\}$, be the $K$ nearest neighbours of $\mathbf{x}_f$ in $\{(\mathbf{x_i}, y_i)\}_{i=1}^n$.
+        \item The predicted class (classification) for $\mathbf{x_f}$ is
+        \begin{equation*}
+            \hat{y}_f = \operatorname{mode}\{y_i^1, y_i^2,\ldots, y_i^K\}
+        \end{equation*}
+    \end{enumerate}
+\end{algo}
+
+\subsubsection{Standardising Variables}
+
+Because we are looking at Euclidean distance, the scale of each variable matters. If we were to multiply $x_1$ by 10, we would yield different predicted classifications. \hl{This is obviously not desirable}.
+
+We standardise all inputs so distances are measured in standard deviations. This means that $K$-NN uses inputs:
+
+\begin{equation*}
+    \dfrac{x_j - \Bar{x}_j}{\sigma_{x_j}}, \quad \text{ for } j = 1, 2, \ldots, p
+\end{equation*}
+
+\begin{shaded}
+    \textbf{Drawbacks of K-NN}:
+
+    \begin{itemize}
+        \item There is no uniformly good way of choosing $K$ in $K$-NN. We can try cross-validation, \hl{but it is unstable}: New data is likely to lead to new best $K$. 
+        \item the classification is often very sensitive to the choice in $K$.
+        \item $K$-NN gives very crude estimates of classification probabilities, either 0 or 1, \hl{which is useless for informing decision making}
+        \item Without good probability estimates, \hl{we cannot assess mis-classification risk}.
+        \item Computationally intensive as we need to count the nearest neighbours for each new $\mathbf{x}$.
+    \end{itemize}
+    
+\end{shaded}
+
+\subsection{Probabilistic Classification Models}
+
+We will introduce the idea of costs in decision-making/classification. To simplify, we will look at the binary case, $y \in \{0,1\}$. There are two ways to be wrong in this case, you can have \hl{false positives or false negatives}. There may be different costs associated with making each type of error. We can generalise this with:
+\begin{equation}
+    \E[\operatorname{cost}(a)] = \sum_{k=1}^K p_k c(k,a)
+\end{equation}
+
+where $c(k,a)$ is a cost function. This equation highlights the fact that optimal decisions (minimising expected costs) require probabilities $p_k$.
+
+\begin{example}
+    A creditor may need a classification algorithm that provides good estimates of the probability that an applicant defaults if approved.
+\end{example}
+
+\subsubsection{Regression for binary responses}
+
+A regression mosled the conditional mean $\E(y|\mathbf{x})$:
+\begin{equation*}
+    \E(y|\mathbf{x}) = f(\mathbf{x^\prime}\beta).
+\end{equation*}
+
+If $y \in \{0,1\}$ is a binary response variable, then given $p(\mathbf{x}) \equiv Pr(y = 1|\mathbf{x})$,
+\begin{equation*}
+    \E[y|\mathbf{x}] = 1 \times p(\mathbf{x}) + 0 \times (1-p(\mathbf{x}) = p(\mathbf{x})
+\end{equation*}
+
+We cannot just use a linear link function here, \hl{the linear regression model will yield probabilities outside the unit interval}. Additionally, in the general case, we cannot use linear regression methods with a qualitative response with more than two classes\footnote{pg 132 ISLR2}.
+
+So, we need a link function $f(\cdot)$ that gives values between 0 and 1:
+\begin{equation*}
+    \E(y|\mathbf{x}) = p(\mathbf{x}) = f(\mathbf{x^\prime}\beta) = f(\beta_0 + \beta_1 x_1 + \ldots, \beta_p x_p) \in [0,1].
+\end{equation*}
+
+This gives rise to the logistic regression.
+
+\subsubsection{Logistic Regression}
+
+The logistic regression gives us a lin function where our predictions will be in the interval $[0,1]$.
+
+\begin{equation}
+    \label{eq:logistic link}
+    f(\mathbf{x^\prime}\beta) = \dfrac{\exp((\mathbf{x^\prime}\beta))}{1 + \exp (\mathbf{x^\prime}\beta)}
+\end{equation}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.25\linewidth]{pic/logistic.png}
+    \caption{Logistic regression link function}
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{Interpreting the logistic regression}: \hl{the logistic regression is a linear model for log odds}. The odds of an event are the probability it happens over the probability that it doesn't. 
+
+Here are the odds of $y=1$:
+\begin{equation*}
+    \dfrac{p(\mathbf{x})}{1-p(\mathbf{x})}
+\end{equation*}
+
+If $p(\mathbf{x}) = 1/4$, the odds are 1/3. We have a $Pr(y=1|\mathbf{x}) = 0.25$. We know then, that the probability of it not happening is 0.75. The ratio of the two is 1:3.
+
+In our logistic regression, we are looking at the \hl{\textit{log} odds}:
+
+\begin{equation}
+    \log\left[\dfrac{p(\mathbf{x})}{1-p(\mathbf{x})}\right] = \mathbf{x^\prime}\beta = \beta_0 + \beta_1 x_1 + \ldots + \beta_p x_p
+\end{equation}
+
+$\beta_k$ measures the percentage increase in the \hl{odds} for the event $y = 1$ associated with a unit increase in $x_k$.
+
+\begin{procedure}
+    Fitting a logistic regression model:
+
+    Interpreting $n$ i.i.d. data by logistic regression lives the likelihood function:
+
+    \begin{equation}
+        \label{eq:likelihood}
+        L(\beta) = \prod_{i=1}^n Pr(y_i|\mathbf{x}_i) = \prod_{i=1}^n \left[\dfrac{\exp(\mathbf{x_i^\prime}\beta)}{1 + \exp (\mathbf{x_i^\prime}\beta)}\right]^{y_i}\left[\dfrac{1}{1 + \exp (\mathbf{x_i^\prime}\beta)}\right]^{1-y_i}
+    \end{equation}
+
+    For a given observation $i$ where $y = 1$, the second term simplifies to 1 (the whole term is raised to the power of 0), and we only look at the probability of success.
+
+    We tend to look at the \hl{log-likelihood} function as it is easier to take the derivative of. Which can be written as:
+
+    \begin{equation}
+        \label{eq:log-likelihood function}
+         \mathcal{L}(\beta) = \sum_{i=1}^n \left[y_i \log (\exp(\mathbf{x_i^\prime}\beta)) - \log (1 + \exp(\mathbf{x^\prime}\beta))\right]
+    \end{equation}
+
+    As we are using a maximum likelihood estimator here, we take the derivative w.r.t $\beta$, so the maximum likelihood estimator of $\beta$ solves:
+\begin{equation}
+    \label{eq: max likelihood}
+    \dfrac{\partial \mathcal{L}(\beta)}{\partial \beta} = \sum_{i=1}^n \left[y_i - \dfrac{\exp(\mathbf{x_i^\prime}\hat{\beta})}{1 + \exp (\mathbf{x_i^\prime}\hat{\beta})}\right] = 0 
+\end{equation}
+    
+\end{procedure}
+
+The \hl{saturated model} perfectly replicates the data i.e. $p_{s,i} = y_i$:
+
+\begin{equation*}
+    L_s = \prod_{i=1}^n p_{s,i}^{y_i} (1 - p_{s,i})^{1-y_i} = \prod_{i=1}^n y_{i}^{y_i} (1 - y_{i})^{1-y_i} =1
+\end{equation*}
+
+We get this result because $0^0 \equiv 1$. We therefore get the \hl{logistic deviance}:
+
+\begin{equation*}
+    D(\beta) = -2(\log(L(\beta) - \underbrace{\log L_s}_{=0}) \propto \sum_{i=1}^n \left[\log(1 + e^{\mathbf{x_i^\prime}\beta}) - y_i \mathbf{x_i^\prime}\beta\right]
+\end{equation*}
+
+\subsubsection{Penalised Logisitic Regression}
+
+In the same way that linear regression can become overfitted, our logistic regression can too. We can apply the same ideas to logistic regression, namely \textit{penalised} logistic regressions.
+
+In the logistic case, we are minimising the penalised deviance defined as:
+
+\begin{equation}
+    \label{eq:log dev pen}
+    D_{pen}(\beta,\lambda) \propto \sum_{i=1}^n\left[\log(1 + e^{\mathbf{x_i^\prime}\beta}) - y_i \mathbf{x_i^\prime}\beta\right] + \lambda \sum_{k=1}^p c(\beta_k)
+\end{equation}
+
+where, again, $c(\beta_k)$ is the cost function dependent on our coefficients, and $\lambda$ is a hyperparameter penalty weight. 
+
+\begin{note}
+    Similar to penalised linear regressions, minimising penalised deviance shrinks fitted coefficients towards zero.
+\end{note}
+
+\subsection{Probabilities and Classification}
+
+A \hl{classification rule} is the probability cutoff $p^*$ such that
+\begin{equation*}
+    \hat{y} = \begin{cases}
+        1, &\text{ if } \hat{p} > p^* \\
+        0, &\text{ if } \hat{p} \geq p^*
+    \end{cases}
+\end{equation*}
+
+There are two types of classification errors:
+\begin{enumerate}
+    \item \hl{False Positive:} classify a true negative ($y=0$) as a positive ($\hat{y} = 1$)
+    \item \hl{False Negative:} classify a true positive $(y = 1$) as a negative $(\hat{y} = 0)$
+\end{enumerate}
+
+The classification rule \hl{that we set} should make as few errors as possible, but how do we identify a good rule?
+
+\begin{enumerate}
+    \item \hl{False Positive Rate:} Proportion of observations that were classified as positive ($\hat{y} = 1$) that are true negatives ($y = 0$)
+    \item \hl{False Negative Rate:} Proportion of observations that were classified as negative ($\hat{y} = 0$) that were true positives ($y=0$)
+    \item \hl{Sensitivity:} Proportion of true positives classified correctly
+    \item  \hl{Specificity:} Proportion of true negatives classified correctly
+\end{enumerate}
+
+As you can imagine there is a relationship between FNR/FPR and sens/spe. As the specificity is the proportion of true negatives, 1 - specificity is the false negative rate. Similarly, with sensitivity, 1 - sensitivity is the false positive rate.
+
+to visualise these metrics we can create some graphs.
+
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pic/error rates.png}
+  \caption{FNR/FPR with changing $p^*$}
+  \label{fig:3nn}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pic/roc.png}
+  \caption{ROC Curve}
+  \label{fig:5nn}
+\end{subfigure}
+\caption{Classification Metrics}
+\label{fig:classification metrics}
+\end{figure}
+
+It is difficult to tell what the optimum classification rule is from plot (a) of Figure \ref{fig:classification metrics}, but when we look to (b) we are aiming to be in the top-left. The top-left of the ROC plot is the ideal model with a 100\% sensitivity and a 100\% specificity. We can think of the horizontal axis of the ROC plot as the FNR. Meaning we want a model with an FNR of 0. 
+
 \newpage
 
 \section{Tree-Based Methods}
 
-Tree-based methods are simple and useful for interpretation but are usually not competitive with the best supervised learning approaches. We start to introduce techniques that make drastic improvements on the simple decision tree, like bagging and random forests.
+Tree-based methods are simple and useful for interpretation but are usually not competitive with the best supervised learning approaches. We start to introduce techniques that make drastic improvements to the simple decision tree, like bagging and random forests.
 
 
 \subsection{Decision Trees}
