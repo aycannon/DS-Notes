@@ -333,7 +333,14 @@ $K$-fold CV is a refinement of the split-sample:
     \end{enumerate}
 \end{procedure}
 
-The result will be $K$ OOS/IS $R^2$. We can use the distribution of these OOS $R^2$ \textit{or just the mean}, to evaluate the model's predictive power. The split can be visualised as:
+The result will be $K$ OOS/IS $R^2$. We can use the distribution of these OOS $R^2$ \textit{or just the mean}, to evaluate the model's predictive power. The $k$-fold CV estimate of the test error is:
+
+\begin{equation}
+    \label{eq:kfold}
+    CV_{(k)} = \dfrac{1}{k} \sum_{i=1}^k MSE_i,
+\end{equation}
+
+The split can be visualised as:
 
 \begin{figure}[h]
     \centering
@@ -344,6 +351,84 @@ The result will be $K$ OOS/IS $R^2$. We can use the distribution of these OOS $R
 
 The $k$-fold estimator of $R^2$ is more accurate as it uses the data more efficiently.
 
+\subsubsection{Leave-One-Out CV}
+
+A special case of the $k$-fold cross-validation technique is the LOOCV technique. This is where $k = n$. It is very similar, however, it is much more computationally intensive as we need to fit the model $n (\geq k)$ times. This means the LOOCV estimate for the test MSE is the average of the $n$ test error estimates:
+
+\begin{equation}
+    \label{eq:LOOCV}
+    CV_{(n)} = \dfrac{1}{n} \sum_{i=1}^n MSE_i,
+\end{equation}
+which, as you'll notice, is almost identical to the $k$-fold case, but with $n$ rather than $k$.
+
+\begin{shaded}
+    \textbf{Things to note about LOOCV:}
+    \begin{enumerate}
+        \item Because we are always only leaving 1 observation out of the training set, there is no randomness in the sets. This means that if we perform LOOCV multiple times, unlike $k$-fold, we will \textbf{always} yield the same results. This can be seen in Figure \ref{fig:LOOCV}.
+        \item With the least squares linear or polynomial regression, rather than re-estimate $n$ times we can use a single equation:
+
+        \begin{equation}
+            \label{eq:LOOCV shortcut}
+            CV_{(n)} = \dfrac{1}{n}\sum_{i=1}^n \left(\dfrac{y_i - \hat{y}_i}{1-h_i}\right)^2
+        \end{equation}
+        where $h_i$ is the leverage of the observation defined as:
+        \begin{equation}
+            \label{eq:leverage}
+            h_i = \dfrac{1}{n} + \dfrac{(x_i - \Bar{x})^2}{\sum_{i^\prime = 1}^n (x_{i^\prime} - \Bar{x})^2}.
+        \end{equation}
+        \begin{note}
+            This leverage equation is for one regressor but can be generalised to many regressors
+        \end{note}
+        Intuitively, the leverage is similar to anomalies (similar inputs but unusual output), but for unusual inputs. The further our regressor is from the mean, the higher the leverage.
+
+        The leverage lies between $1/n$ and 1 and reflects the amount an observation influences its own fit.
+        \item The shortcut does not hold in general and only for least squares linear and polynomial regressions. Meaning in other cases we need to refit the model $n$ times.
+    \end{enumerate}
+\end{shaded}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = \textwidth]{pic/LOOCV vs kfold.png}
+    \caption{Left: LOOCV error curve, Right: 10-fold CV run 9 separate times}
+    \label{fig:LOOCV}
+\end{figure}
+
+\subsubsection{Bias-Variance trade-off} \label{sec:BV}
+
+The expected \textit{test MSE}, can ALWAYS be decomposed into the sum of three fundamental quantities: the \hl{variance} of the OOS prediction $\hat{y} = \mathbf{x}_{OOS}^\prime\beta$, the \hl{squared bias} and the \hl{variance of the error term $u$}, $u \equiv y - \hat{y}$. That is:
+
+\begin{equation}
+\label{expected test mse}
+    MSE_{OOS} = var(\hat{y}|\mathbf{x}_{OOS}) + (\mathbf{x}_{OOS}^\prime \E[\hat{\beta}] - \mathbf{x}_{OOS}^\prime\beta)^2 + var(u|\mathbf{x}_{OOS})
+\end{equation}
+
+\begin{mdframed}
+    \textit{Variance} refers to the amount by which our predicted response would change if we estimated it using a different training data set. Because the model is fit on the training data, by using different training data we will yield different predictions.\hl{Ideally we would not want the estimate for $f$ to vary much between training sets}.
+
+    \textit{Bias} refers to the error that is introduced by approximating a real-life (complex) problem, by a much simpler model. For example, linear regressions assume a linear relationship between $Y$ and $\mathbf{x}$, however in real life the relationship may be highly non-linear. Therefore, by performing a linear regression will result in some bias in our predictions.
+
+    We see in the cross-validation case, that we can induce or reduce bias by changing the size of the training and test samples.
+\end{mdframed}
+
+Equation \eqref{expected test mse} tells us that to minimise the expected test error we select methods that simultaneously have \textbf{low variance} and \textbf{low bias}.
+
+\begin{note}
+    Expected test MSE can never lie below $var(\epsilon)$.
+\end{note}
+
+Generally, more flexible methods increase variance and decrease bias. \hl{The relative rate of change of these two quantities determines whether the test MSE increases or decreases as we increase flexibility}.
+\begin{itemize}
+    \item Initially, an increase in flexibility leads to a quicker decrease in bias than an increase in variance. \hl{Meaning expected test MSE declines}.
+    \item At some point increasing flexibility has little impact on bias but starts to significantly increase variance and therefore \hl{increases expected test MSE}.
+\end{itemize}
+
+\paragraph{Bias-Variance Trade-off in k-fold CV}
+
+ We know that the validation set (split sample) approach is biased and often leads to an overestimation of the test error rate (OOS MSE) as it only uses around half of the available observations to train the model.
+
+On the other end of the spectrum, LOOCV estimates an approximately \textit{unbiased} estimate of the test error. So, it is easy to see that $k$-fold CV offers a middle ground. Other than being less computationally expensive, it can also produce more accurate estimates for OOS MSE as it creates less variance by inducing a small amount of bias.
+
+There is a bias-variance trade-off in the selection of $k$ in our $k$-fold CV. When $k=2$ we have the validation set method (high bias, low variance), and when $k=n$ we have the LOOCV method (low bias, high variance). 
 \subsection{Dimension Reduction}
 
 It is very common to have high-dimensional models (many regressors). In this case, we may have 1000's of regressors which is way too many for interpretation. The easiest way to do this, \hl{the cut model}. Here we choose variables with the lowest $p$-values. The choice of the number of variables is completely subjective.
@@ -418,38 +503,9 @@ The instability comes from the number of large coefficients in our models. Becau
     \item We want $\hat{\beta}$ to be \hl{less variable, give better predictions and contain exact zeros}.
 \end{itemize}
 
-The point of penalised regressions is to shrink the coefficients estimates (even to zero). This leads to bias, however we will have less volatile predictions.
+The point of penalised regressions is to shrink the coefficient estimates (even to zero). This leads to bias, however, we will have less volatile predictions.
 
-\subsubsection{Bias-Variance trade-off}
 
-The expected \textit{test MSE} for a given value $x_0$, can ALWAYS be decomposed into the sum of three fundamental quantities: the \hl{variance} of $\hat{f}(x_0)$, the \hl{squared bias} of $\hat{f}(x_0)$ and the \hl{variance of the error term $\epsilon$}. That is:
-
-\begin{equation}
-\label{expected test mse}
-    \E[y_0 - \hat{f}(x_0)]^2 = var(\hat{f}(x_0)) + [\text{bias}(\hat{f}(x_0))]^2 + var(\epsilon)
-\end{equation}
-
-here the notation: $ \E[y_0 - \hat{f}(x_0)]^2$ defines the \textit{expected test MSE at $x_0$}, and refers to the average test MSE that would be obtained if we repeatedly estimated $f$ using a large number of training sets, and tested each at $x_0$.
-
-\hl{The overall expected test MSE can be computed by averaging the expected test MSE over all possible values of $x_0$ in the test set.}
-
-\begin{mdframed}
-    \textit{Variance} refers to the amount by which our predicted response would change if we estimated it using a different training data set. Because the model is fit on the training data, by using different training data we will yield different predictions.\hl{Ideally we would not want the estimate for $f$ to vary much between training sets}.
-
-    \textit{Bias} refers to the error that is introduced by approximating a real-life (complex) problem, by a much simpler model. For example, linear regressions assume a linear relationship between $Y$ and $\mathbf{x}$, however in real life the relationship may be highly non-linear. Therefore, by performing a linear regression will result in some bias in our predictions.
-\end{mdframed}
-
-Equation \eqref{expected test mse} tells us that to minimise the expected test error we select methods that simultaneously have \textbf{low variance} and \textbf{low bias}.
-
-\begin{note}
-    Expected test MSE can never lie below $var(\epsilon)$.
-\end{note}
-
-Generally, more flexible methods increase variance and decrease bias. \hl{The relative rate of change of these two quantities determines whether the test MSE increases or decreases as we increase flexibility}.
-\begin{itemize}
-    \item Initially, an increase in flexibility leads to a quicker decrease in bias than an increase in variance. \hl{Meaning expected test MSE declines}.
-    \item At some point increasing flexibility has little impact on bias but starts to significantly increase variance and therefore \hl{increases expected test MSE}.
-\end{itemize}
 
 \subsection{Ridge and Lasso}
 
