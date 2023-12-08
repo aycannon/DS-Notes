@@ -30,6 +30,7 @@
 \usepackage{subcaption}
 \usepackage{tikz, pgfplots}
 \usetikzlibrary{positioning}
+\pgfplotsset{compat = 1.18}
 \usepackage{float}
 
 \newcommand\indep{\protect\mathpalette{\protect\independenT}{\perp}}
@@ -40,6 +41,9 @@
 \parindent 0in
 \parskip 12pt
 \geometry{margin=1in, headsep=0.25in}
+
+\pagestyle{fancy}
+\lfoot{\hyperlink{contents}{$\looparrowleft$}}
 
 \theoremstyle{definition}
 %\newtheorem*{note}{Note}

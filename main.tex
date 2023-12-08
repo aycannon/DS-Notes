@@ -12,7 +12,7 @@
 \today
 \end{center}
 % use \begin{shaded} and \begin{note}
-
+\hypertarget{contents}{}
 % Contents (all formatting here, other than colours)
 {
 \begin{tcolorbox}[title=Contents, fonttitle=\huge\sffamily\bfseries\selectfont,interior style={left color=contcol1!50!white,right color=contcol2!50!white},frame style={left color=contcol1!80!white,right color=contcol2!80!white},coltitle=black,top=2mm,bottom=2mm,left=2mm,right=2mm,drop fuzzy shadow,enhanced,breakable]
@@ -20,6 +20,7 @@
 \@starttoc{toc}
 \makeatother
 \end{tcolorbox}}
+
 
 \newpage
 
@@ -804,13 +805,13 @@ to visualise these metrics we can create some graphs.
   \centering
   \includegraphics[width=\linewidth]{pic/error rates.png}
   \caption{FNR/FPR with changing $p^*$}
-  \label{fig:3nn}
+  \label{fig:classification error rates}
 \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
   \centering
   \includegraphics[width=\linewidth]{pic/roc.png}
   \caption{ROC Curve}
-  \label{fig:5nn}
+  \label{fig:ROC curve}
 \end{subfigure}
 \caption{Classification Metrics}
 \label{fig:classification metrics}
@@ -856,7 +857,7 @@ At our \hl{primary node} we check whether the player has been in the league for 
 \begin{shaded}
     \textbf{Terminology:}
 
-    The tree splits input space $\mathbf{x} = \text{years, hits})$ in final nodes called \textbf{leafs}:
+    The tree splits input space $\mathbf{x} = (\text{years, hits})$ in final nodes called \textbf{leafs}:
 
     \begin{itemize}
         \item $R_1 = \{\mathbf{x}|\text{years} < 4.5\}$
@@ -968,13 +969,13 @@ To avoid this we can grow a very complex and deep tree and then \textit{prune} i
     \hl{Cost Complexity Pruning selects a sequence of subtrees} indexed by $\alpha>0$. Let $T_0$ be the complex tree; for each $\alpha>0$ find subtree $T_\alpha\subset T_0$ such that
 
     \begin{equation}
-        \sum_{j=1}^{|T_\alpha}\sum_{k:\mathbf{x}_k\in R_k}(y_k - \Bar{y}_j)^2 + \alpha|T_\alpha|
+        \sum_{j=1}^{|T_\alpha|}\sum_{k:\mathbf{x}_k\in R_k}(y_k - \Bar{y}_j)^2 + \alpha|T_\alpha|
     \end{equation}
 
     is minimised.
 
     \begin{note}
-        $|T_\alpha|$ s the number of leaves on $T_\alpha$
+        $|T_\alpha|$ is the number of leaves on $T_\alpha$
     \end{note}
 
     Our \textbf{hyper-parameter} $\alpha$ penalises complexity (number of leaves); by varying $\alpha$ we obtain a regularisation path from complex to simple.
@@ -1055,17 +1056,21 @@ We can estimate the the test MSE by cross validation but for bagging-based predi
 
 It can be shown that each bagged tree utilises only around two-thirds of the observations. The remaining one-third of the observations not used to fit a given bagged tree are referred to as the out-of-bag observations. We can predict the response for the $i$th observation using each of the trees in which that observation was OOB. This will yield around $B/3$ predictions which we can then average over (for regressions) or take majority vote (classification models).
 
+\newpage
+
 \section{Unsupervised Learning}
 
 So far, our main objective has been dimension reduction on big data  i.e. learn low dimensional summary stats necessary for good decisions from high dimensional input $\mathbf{x}$. And \hl{so far, this has all be supervised}, i.e. we have a target variable $y$ (regress target $y$ on high dimensional $\mathbf{x}$ ti get one dimensional $\hat{y} = \mathbf{x}^\prime\hat{\beta}$).
 
-\hl{In unsupervised machine learning there is no target or outcome variable.} We still have a high dimensional input $\mathbf{x}$, and we still want dimension reduction. It is common to find partially labelled data and in this case we often use unsupervised learning to split the data into groups; then use the labelled data to predict.
+\hl{In unsupervised machine learning there is no target or outcome variable.} We still have a high dimensional input $\mathbf{x}$, and we still want dimension reduction. It is common to find partially labelled data and in this case, we often use unsupervised learning to split the data into groups; and then use the labelled data to predict.
 
-\subsubsection{Mixture models}
+\subsection{Mixture models}
 
 Cluster analysis is used to collect similar observations into groups. Suppose data $(\mathbf{x}_i)_{i=1}^n$ where $\mathbf{x} = (x_1, x_2, \ldots, x_p)$ is a vector with $p$ characteristics. Clustering represents the data as output from a mixture distribution.
 
-\paragraph{Mixture Distribution}: $\mathbf{x}_i$ is drawn from one of $K$ \textbf{mixture components} $p_k(\mathbf{x}), k = 1, 2, \ldots, K$. These mixture components are multivariate distributions of $\mathbf{x}$. 
+\subsubsection{Mixture Distribution}
+
+$\mathbf{x}_i$ is drawn from one of $K$ \textbf{mixture components} $p_k(\mathbf{x}), k = 1, 2, \ldots, K$. These mixture components are multivariate distributions of $\mathbf{x}$. 
 
 The \textit{Guassian mixture model} where $p$ characterises $\mathbf{x}$ are i.i.d with variance $\sigma_k^2$ is a common clustering model;
 
@@ -1138,7 +1143,7 @@ where $i: k_i = k$ are the $n_k$ observations with $k_i = k$.
 In our example, $W(C_k)$ is the deviance:
 
 \begin{equation*}
-    W(C_k) = D_k = \sum_{j=1}^p (X_{ij} - \mu_{kj)^2}
+    W(C_k) = D_k = \sum_{j=1}^p (x_{ij} - \mu_{kj})^2
 \end{equation*}
 
 Thus, our total deviance of $\{\mathbf{x}_i\}_{i=1}^n$ is 
@@ -1533,7 +1538,7 @@ The linear treatment effects (LTE) model is:
 
 The first equation looks like normal regression for prediction. \textbf{But} our specification of the conditional error is new. $\E[\epsilon|d,\mathbf{x}] = 0$, allows interpretation of $\gamma$ as a causal effect of $d$ on $y$. 
 
-the second equation is saying that $\mathbf{x}$ contains \textbf{all} variables affecting $d$ and $y$.
+the equations together are saying that $\mathbf{x}$ contains \textbf{all} variables affecting $d$ and $y$.
 
 \begin{note}
     The LTE model is a structural model meaning it specifies the relation between unobserved $\epsilon$ and observed $d,\mathbf{x}$; unlike a reduced form model which only specifies the relationship between observable variables.
@@ -1543,7 +1548,7 @@ the second equation is saying that $\mathbf{x}$ contains \textbf{all} variables 
 
 \begin{procedure}
     \hspace{1in}
-    Suppose conditional ignorability (on $\mathbf{x}$) ignorability holds, i.e. $\E[\epsilon|d,\mathbf{x}] = 0$. We partition $\mathbf{x} = \{\mathbf{z,w}\}$ and assume $\E[\epsilon|d,\mathbf{w}]\neq 0$. We observe $\mathbf{z}$, but not $\mathbf{w}$.
+    Suppose conditional ignorability (on $\mathbf{x}$) ignorability holds, i.e. $\E[\epsilon|d,\mathbf{x}] = 0$. We partition $\mathbf{x} = \{\mathbf{z,w}\}$ and assume $\E[\epsilon|\mathbf{z},\mathbf{w}]\neq 0$. We observe $\mathbf{z}$, but not $\mathbf{w}$.
 
     Suppose you want to predict $y$ form $(d,\mathbf{z})$. We use the conditional (on $d,\mathbf{z}$) mean function of $y$: $\E(y|d,\mathbf{z})$.
 
@@ -1551,10 +1556,10 @@ the second equation is saying that $\mathbf{x}$ contains \textbf{all} variables 
 
     \begin{equation}
         \label{LTE OLS}
-        y = \alpha d + \eta \mathbf{w} + u
+        y = \alpha d + \eta \mathbf{z} + u
     \end{equation}
 
-    where $u \equiv y - \alpha d - \eta \mathbf{w}$.
+    where $u \equiv y - \alpha d - \eta \mathbf{z}$.
 \end{procedure}
 
 As long as the average relationship between $y, d, \mathbf{z}$ i.e. $\E(y|d,\mathbf{z})$ is stable, the prediction model works well.
